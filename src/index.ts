@@ -1,4 +1,5 @@
-import {ApplicationConfig, App} from './application';
+import {App, ApplicationConfig} from './application';
+
 
 export * from './application';
 
@@ -15,7 +16,7 @@ export async function main(options: ApplicationConfig = {}) {
 }
 
 if (require.main === module) {
-  // Run the application
+  // Configuración del seridor REST
   const config = {
     rest: {
       port: +(process.env.PORT ?? 3000),
@@ -32,6 +33,7 @@ if (require.main === module) {
       },
     },
   };
+  //Manejo de errores
   main(config).catch(err => {
     console.error('Cannot start the application.', err);
     process.exit(1);

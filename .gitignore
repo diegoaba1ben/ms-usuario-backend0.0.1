@@ -65,3 +65,7 @@ typings/
 
 # Emacs auto-save file
 \#*#
+
+/node_modules
+/dist
+/.env

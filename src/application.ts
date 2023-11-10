@@ -1,14 +1,16 @@
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
+import {RepositoryMixin} from '@loopback/repository';
+import {RestApplication} from '@loopback/rest';
 import {
   RestExplorerBindings,
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
-import {RepositoryMixin} from '@loopback/repository';
-import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
+import {MongoDbDataSource} from './datasources';
 import {MySequence} from './sequence';
+
 
 export {ApplicationConfig};
 
@@ -18,20 +20,23 @@ export class App extends BootMixin(
   constructor(options: ApplicationConfig = {}) {
     super(options);
 
-    // Set up the custom sequence
+    //configuración de datasource
+    this.dataSource(MongoDbDataSource,);
+
+    // Configuración secuencia personalizada
     this.sequence(MySequence);
 
-    // Set up default home page
+    // Configuración de la página inicio predeterminada
     this.static('/', path.join(__dirname, '../public'));
 
-    // Customize @loopback/rest-explorer configuration here
+    // configuración personalizada @loopback/rest-explorer configuration here
     this.configure(RestExplorerBindings.COMPONENT).to({
       path: '/explorer',
     });
     this.component(RestExplorerComponent);
 
     this.projectRoot = __dirname;
-    // Customize @loopback/boot Booter Conventions here
+    // Configuración de @loopback/boot Booter Conventions
     this.bootOptions = {
       controllers: {
         // Customize ControllerBooter Conventions here
