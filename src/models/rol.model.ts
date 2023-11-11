@@ -25,6 +25,8 @@ export class Rol extends Entity {
   })
   descripcion: string;
 
+
+  //Diego Benjumea
   @belongsTo(() => Usuario)
   public usuarioId: number;
 

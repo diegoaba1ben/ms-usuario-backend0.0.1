@@ -1,26 +1,38 @@
-import {inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, HasManyThroughRepositoryFactory} from '@loopback/repository';
-import {MongodbDataSource} from '../datasources';
-import {Usuario, UsuarioRelations, Rol, RolUsuario} from '../models';
-import {RolUsuarioRepository} from './rol-usuario.repository';
-import {RolRepository} from './rol.repository';
+import {inject} from '@loopback/core';
+import {DefaultCrudRepository, Filter} from '@loopback/repository';
+import {HttpErrors} from '@loopback/rest';
+import * as bcrypt from 'bcrypt';
+import {MongoDbDataSource} from '../datasources';
+import {Usuario, UsuarioRelations} from '../models';
 
 export class UsuarioRepository extends DefaultCrudRepository<
   Usuario,
   typeof Usuario.prototype.id,
   UsuarioRelations
 > {
-
-  public readonly roles: HasManyThroughRepositoryFactory<Rol, typeof Rol.prototype.id,
-          RolUsuario,
-          typeof Usuario.prototype.id
-        >;
-
   constructor(
-    @inject('datasources.mongodb') dataSource: MongodbDataSource, @repository.getter('RolUsuarioRepository') protected rolUsuarioRepositoryGetter: Getter<RolUsuarioRepository>, @repository.getter('RolRepository') protected rolRepositoryGetter: Getter<RolRepository>,
+    @inject('datasources.mongodb') dataSource: MongoDbDataSource,
   ) {
     super(Usuario, dataSource);
-    this.roles = this.createHasManyThroughRepositoryFactoryFor('roles', rolRepositoryGetter, rolUsuarioRepositoryGetter,);
-    this.registerInclusionResolver('roles', this.roles.inclusionResolver);
+  }
+
+  async create(usuario: Usuario, filter?: Filter<Usuario>): Promise<Usuario> {
+    const existingUser = await this.findOne({where: {correo: usuario.correo}});
+    if (existingUser) {
+      throw new HttpErrors.BadRequest('El correo electrónico ya está en uso');
+    }
+    //hasheo de contraseña
+    const hashedPassword = await bcrypt.hash(usuario.password, 10);
+    usuario.password = hashedPassword;
+    return super.create(usuario, filter);
+  }
+  //Validación de contraseña contra el hash
+  async verifyPassword(correo: string, providedPassword: string): Promise<boolean> {
+    const user = await this.findOne({where: {correo}});
+    if (!user) {
+      throw new HttpErrors.NotFound('usuario no encontrado');
+    }
+    const isPasswordValid = await bcrypt.compare(providedPassword, user.password);
+    return isPasswordValid;
   }
 }

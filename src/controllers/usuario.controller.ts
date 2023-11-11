@@ -15,7 +15,7 @@ import {
   post,
   put,
   requestBody,
-  response,
+  response
 } from '@loopback/rest';
 import {Rol, Usuario} from '../models';
 import {RolRepository, UsuarioRepository} from '../repositories';
@@ -77,6 +77,7 @@ export class UsuarioController {
       },
     },
   })
+  //Diego Benjumea
   async find(
     @param.filter(Usuario) filter?: Filter<Usuario>,
   ): Promise<Usuario[]> {

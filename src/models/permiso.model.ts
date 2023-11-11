@@ -11,6 +11,8 @@ export class Permiso extends Entity {
   })
   id?: number;
 
+
+  //Diego Benjumea
   @property({
     type: 'string',
     required: true,
