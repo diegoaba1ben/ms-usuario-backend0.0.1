@@ -1,6 +1,22 @@
 import {Entity, model, property} from '@loopback/repository';
 
-@model()
+
+@model({
+  settings: {
+    indexes: {
+      uniqueRolPermisoIndex: {
+        keys: {
+          rolId: 1,
+          permisoId: 1,
+        },
+        options: {
+          unique: true,
+        },
+      },
+    },
+  },
+})
+
 export class RolPermiso extends Entity {
   @property({
     type: 'number',

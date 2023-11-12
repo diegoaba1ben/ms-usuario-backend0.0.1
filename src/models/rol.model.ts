@@ -16,12 +16,28 @@ export class Rol extends Entity {
   @property({
     type: 'string',
     required: true,
+    jsonSchema: {
+      minLength: 3, //Longitud mínima
+      maxLength: 20, //Longitud máxima
+      pattern: '^[A-Za-z]+$',
+      errorMessage: {
+        pattern: 'El nombre del rol debe contener solo letras.'
+      }
+    }
   })
   nombre: string;
 
   @property({
     type: 'string',
     required: true,
+    jsonSchema: {
+      minLength: 3, //Longitud mínima
+      maxLength: 50, //Longitud máxima
+      pattern: '^[A-Za-z]+$',
+      errorMessage: {
+        pattern: 'La descripción de los roles debe tener 50 caracteres.'
+      }
+    }
   })
   descripcion: string;
 
