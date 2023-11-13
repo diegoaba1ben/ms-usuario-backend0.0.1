@@ -7,13 +7,13 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
@@ -23,8 +23,8 @@ import {RolRepository} from '../repositories';
 export class RolController {
   constructor(
     @repository(RolRepository)
-    public rolRepository : RolRepository,
-  ) {}
+    public rolRepository: RolRepository,
+  ) { }
 
   @post('/roles')
   @response(200, {
@@ -146,5 +146,23 @@ export class RolController {
   })
   async deleteById(@param.path.number('id') id: number): Promise<void> {
     await this.rolRepository.deleteById(id);
+  }
+  //Asignación de permisos
+  async assignPermission(
+    @param.path.number('id') id: number,
+    @param.path.number('permissionId') permissionId: number,
+  ): Promise<void> {
+    // Aquí va la lógica para asignar el permiso al rol
+  }
+
+  @del('/roles/{id}/permissions/{permissionId}')
+  @response(204, {
+    description: 'Desasigna un permiso de un rol',
+  })
+  async unassignPermission(
+    @param.path.number('id') id: number,
+    @param.path.number('permissionId') permissionId: number,
+  ): Promise<void> {
+    // Aquí va la lógica para desasignar el permiso del rol
   }
 }

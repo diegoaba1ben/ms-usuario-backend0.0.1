@@ -1,19 +1,23 @@
-import {inject} from '@loopback/core';
-import {DefaultCrudRepository, Filter} from '@loopback/repository';
+import {Getter, inject} from '@loopback/core';
+import {DefaultCrudRepository, Filter, repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import * as bcrypt from 'bcrypt';
 import {MongoDbDataSource} from '../datasources';
 import {Usuario, UsuarioRelations} from '../models';
+import {RolRepository} from './rol.repository';
 
 export class UsuarioRepository extends DefaultCrudRepository<
   Usuario,
   typeof Usuario.prototype.id,
   UsuarioRelations
 > {
+  roles: any;
   constructor(
     @inject('datasources.mongodb') dataSource: MongoDbDataSource,
+    @repository.getter('RolRepository') protected rolRepositoryGetter: Getter<RolRepository>,
   ) {
     super(Usuario, dataSource);
+    this.roles = this.createHasManyRepositoryFactoryFor('roles', rolRepositoryGetter);
   }
 
   async create(usuario: Usuario, filter?: Filter<Usuario>): Promise<Usuario> {
