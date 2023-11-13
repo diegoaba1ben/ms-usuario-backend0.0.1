@@ -1,6 +1,6 @@
 import {inject} from '@loopback/core';
 import {DefaultCrudRepository} from '@loopback/repository';
-import {MongodbDataSource} from '../datasources';
+import {MongoDbDataSource} from '../datasources';
 import {Permiso, PermisoRelations} from '../models';
 
 export class PermisoRepository extends DefaultCrudRepository<
@@ -9,7 +9,7 @@ export class PermisoRepository extends DefaultCrudRepository<
   PermisoRelations
 > {
   constructor(
-    @inject('datasources.mongodb') dataSource: MongodbDataSource,
+    @inject('datasources.mongodb') dataSource: MongoDbDataSource,
   ) {
     super(Permiso, dataSource);
   }
