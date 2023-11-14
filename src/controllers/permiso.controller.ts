@@ -7,24 +7,37 @@ import {
   Where,
 } from '@loopback/repository';
 import {
-  post,
-  param,
+  del,
   get,
   getModelSchemaRef,
+  HttpErrors,
+  param,
   patch,
+  post,
   put,
-  del,
   requestBody,
   response,
 } from '@loopback/rest';
 import {Permiso} from '../models';
-import {PermisoRepository} from '../repositories';
+import {
+  PermisoRepository,
+  RolPermisoRepository,
+  RolRepository,
+  UsuarioRepository
+} from '../repositories';
 
 export class PermisoController {
   constructor(
     @repository(PermisoRepository)
-    public permisoRepository : PermisoRepository,
-  ) {}
+    public permisoRepository: PermisoRepository,//Inyección de PermisoRepository
+    //inyección de PermisoRepository
+    @repository(UsuarioRepository)
+    public usuarioRepository: UsuarioRepository,//Inyección de usuarioRepository
+    @repository(RolRepository)
+    public rolRepository: RolRepository, //Inyección de RolRepository
+    @repository(RolPermisoRepository)
+    public rolPermisoRepository: RolPermisoRepository,//Inyección de RolPermisoRepository
+  ) { }
 
   @post('/permisos')
   @response(200, {
@@ -110,6 +123,120 @@ export class PermisoController {
   ): Promise<Permiso> {
     return this.permisoRepository.findById(id, filter);
   }
+
+  //Consulta de permisos por id
+  @get('/usuarios/{id}/permisos')
+  @response(200, {
+    description: 'Instancia de arreglo de permisos',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Permiso, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findPermisosByUserId(
+    @param.path.number('id') id: number,
+  ): Promise<Permiso[]> {
+    // Primero, se obtiene el usuario por su Id
+    const usuario = await this.usuarioRepository.findById(id);
+    // Se usa el id del usuario para obtener los roles
+    const roles = await this.rolRepository.find({
+      where: {usuarioId: usuario.id},
+    });
+    // para cada  rol obtenido, se encuentran los permisos asociados
+    const permisos: Permiso[] = [];
+    for (const rol of roles) {
+      const rolPermisos = await this.rolPermisoRepository.find({
+        where: {rolId: rol.id},
+      });
+      for (const rolPermiso of rolPermisos) {
+        const permiso = await this.permisoRepository.findById(rolPermiso.permisoId);
+        permisos.push(permiso);
+      }
+    }
+    return permisos;
+  }
+  //Búsqueda por apellido
+  @get('/usuarios/{apellido}/permisos')
+  @response(200, {
+    description: 'Instancia de arreglo de permisos',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Permiso, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findPermisosByUserApellido(
+    @param.path.string('apellido') apellido: string,
+  ): Promise<Permiso[]> {
+    // Primero, se obtiene el usuario por su apellido
+    const usuario = await this.usuarioRepository.findOne({where: {apellido: apellido}});
+    if (!usuario) {
+      throw new HttpErrors.NotFound(`Usuario con apellido ${apellido} no encontrado`);
+    }
+    // Se usa el id del usuario para obtener los roles
+    const roles = await this.rolRepository.find({
+      where: {usuarioId: usuario.id},
+    });
+    // para cada rol obtenido, se encuentran los permisos asociados
+    const permisos: Permiso[] = [];
+    for (const rol of roles) {
+      const rolPermisos = await this.rolPermisoRepository.find({
+        where: {rolId: rol.id},
+      });
+      for (const rolPermiso of rolPermisos) {
+        const permiso = await this.permisoRepository.findById(rolPermiso.permisoId);
+        permisos.push(permiso);
+      }
+    }
+    return permisos;
+  }
+
+  //Búsqueda de permisos por correo
+  @get('/usuarios/{correo}/permisos')
+  @response(200, {
+    description: 'Instancia de arreglo de permisos',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Permiso, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findPermisosByUserEmail(
+    @param.path.string('correo') correo: string,
+  ): Promise<Permiso[]> {
+    // Primero, se obtiene el usuario por su correo
+    const usuario = await this.usuarioRepository.findOne({where: {correo: correo}});
+    if (!usuario) {
+      throw new HttpErrors.NotFound(`Usuario con correo ${correo} no encontrado`);
+    }
+    // Se usa el id del usuario para obtener los roles
+    const roles = await this.rolRepository.find({
+      where: {usuarioId: usuario.id},
+    });
+    // para cada rol obtenido, se encuentran los permisos asociados
+    const permisos: Permiso[] = [];
+    for (const rol of roles) {
+      const rolPermisos = await this.rolPermisoRepository.find({
+        where: {rolId: rol.id},
+      });
+      for (const rolPermiso of rolPermisos) {
+        const permiso = await this.permisoRepository.findById(rolPermiso.permisoId);
+        permisos.push(permiso);
+      }
+    }
+    return permisos;
+  }
+
 
   @patch('/permisos/{id}')
   @response(204, {
