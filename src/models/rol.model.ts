@@ -1,6 +1,7 @@
-import {Entity, belongsTo, hasMany, model, property} from '@loopback/repository';
+import {Entity, hasMany, model, property} from '@loopback/repository';
 import {Permiso} from './permiso.model';
 import {RolPermiso} from './rol-permiso.model';
+import {UsuarioRol} from './usuario-rol.model';
 import {Usuario} from './usuario.model';
 
 
@@ -43,8 +44,14 @@ export class Rol extends Entity {
 
 
   //Diego Benjumea
-  @belongsTo(() => Usuario)
-  public usuarioId: number;
+  @hasMany(() => Usuario, {
+    through: {
+      model: () => UsuarioRol,
+      keyFrom: 'rolId',
+      keyTo: 'usuarioId'
+    }
+  })
+
 
   @hasMany(() => Permiso, {
     through: {

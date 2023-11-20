@@ -1,8 +1,12 @@
-import {Entity, hasMany, model, property} from '@loopback/repository';
+import {Entity, HasManyRepositoryFactory, hasMany, model, property} from '@loopback/repository';
 import {Rol} from './rol.model';
+import {UsuarioRol} from './usuario-rol.model';
 
 @model()
 export class Usuario extends Entity {
+  static id(id: any) {
+    throw new Error('Method not implemented.');
+  }
   @property({
     type: 'number',
     id: true,
@@ -16,7 +20,7 @@ export class Usuario extends Entity {
     //validaciones para nombre
     jsonSchema: {
       minLength: 3, //Longitud mínima
-      maxLength: 25, //Longitud máxima
+      maxLength: 30, //Longitud máxima
       pattern: '^[A-Za-zzÀ-ÿ]+$',//Solo letras, incluso en otro idioma
       errorMessage: {
         pattern: 'El nombre debe contener únicamente letras.'
@@ -62,8 +66,15 @@ export class Usuario extends Entity {
   })
   password: string;
 
-  @hasMany(() => Rol)
-  public roles: Rol[];
+  @hasMany(() => Rol, {
+    through: {
+      model: () => UsuarioRol,
+      keyFrom: 'usuarioId',
+      keyTo: 'rolId'
+    }
+  })
+  public roles: HasManyRepositoryFactory<Rol, typeof Usuario.prototype.id>
+
 
   constructor(data?: Partial<Usuario>) {
     super(data);

@@ -1,34 +1,26 @@
 import {inject} from '@loopback/core';
 import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-  Where,
+  Count, CountSchema, Filter, FilterExcludingWhere, repository, Where,
 } from '@loopback/repository';
 import {
-  del,
-  get,
-  getModelSchemaRef,
-  HttpErrors,
-  param,
-  patch,
-  post,
-  requestBody,
+  del, get, getModelSchemaRef, HttpErrors, param, patch, post, requestBody,
   response
 } from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {hash} from 'bcrypt'; //
 import {Rol, Usuario} from '../models';
-import {RolRepository, UsuarioRepository} from '../repositories';
+import {UsuarioRol} from '../models/usuario-rol.model';
+import {RolRepository, UsuarioRepository, UsuarioRolRepository} from '../repositories';
+
 
 export class UsuarioController {
   constructor(
     @repository(UsuarioRepository)
     public usuarioRepository: UsuarioRepository,
     @repository(RolRepository)
-    public rolRepository: RolRepository
+    public rolRepository: RolRepository,
+    @repository(UsuarioRolRepository)
+    public usuarioRolRepository: UsuarioRolRepository,
   ) { }
 
   @get('roles')
@@ -165,6 +157,17 @@ export class UsuarioController {
     }
     return usuario;
   }
+  //Creación array para que usuario acceda a yodos los roles
+  @get('/usuariois/apellido/{apellido}/roles')
+  async obteneerRolesPorApellido(
+    @param.path.string('apellido') apellido: string,
+  ): Promise<Rol[]> {
+    const usuario = await this.usuarioRepository.findOne({where: {apellido}});
+    if (!usuario) {
+      throw new HttpErrors.NotFound('Usuario no encontrado');
+    }
+    return this.usuarioRepository.roles(usuario.id).find();
+  }
 
   //Filtro avanzado
   @get('/usuarios')
@@ -217,11 +220,24 @@ export class UsuarioController {
   ): Promise<void> {
     const usuario = await this.usuarioRepository.findOne({where: {apellido}});
     if (!usuario) {
-      throw new HttpErrors.NotFound(`Apellido deusuario no encontrado : ${apellido}`);
+      throw new HttpErrors.NotFound(`No user found with this apellido: ${apellido}`);
     }
-    await this.usuarioRepository.roles(usuario.id).link(roleId);
-  }
 
+    if (usuario.id !== undefined) {
+      const usuarioRol = new UsuarioRol();
+      usuarioRol.usuarioId = usuario.id;
+
+      const parsedRoleId = parseInt(roleId);
+      if (!isNaN(parsedRoleId)) {
+        usuarioRol.rolId = parsedRoleId;
+        await this.usuarioRolRepository.create(usuarioRol);
+      } else {
+        throw new HttpErrors.BadRequest('Invalid role ID');
+      }
+    } else {
+      throw new HttpErrors.NotFound('User ID not found');
+    }
+  }
   //Asignación de rol por correo
 
   @patch('/usuarios/correo/{correo}/roles/{roleId}', {
@@ -233,13 +249,13 @@ export class UsuarioController {
   })
   async assignRoleByCorreo(
     @param.path.string('correo') correo: string,
-    @param.path.string('roleId') roleId: string,
+    @param.path.string('rolId') rolId: string,
   ): Promise<void> {
     const usuario = await this.usuarioRepository.findOne({where: {correo}});
     if (!usuario) {
       throw new HttpErrors.NotFound(`Correo de usuario no encontrado: ${correo}`);
     }
-    await this.usuarioRepository.roles(usuario.id).link(roleId);
+    await this.usuarioRepository.usuarioRoles(usuario.id).create({rolId: rolId});
   }
 
   //Desasignación de rol por apellido
@@ -252,13 +268,11 @@ export class UsuarioController {
   })
   async unassignRoleByApellido(
     @param.path.string('apellido') apellido: string,
-    @param.path.string('roleId') roleId: string,
+    @param.path.string('rolId') rolId: string,
   ): Promise<void> {
-    const usuario = await this.usuarioRepository.findOne({where: {apellido}});
-    if (!usuario) {
-      throw new HttpErrors.NotFound(`No user found with this apellido: ${apellido}`);
-    }
-    await this.usuarioRepository.roles(usuario.id).unlink(roleId);
+    const usuarioRol = await this.usuarioRepository.usuarioRoles(Usuario.id).findOne({where: {rolId: rolId}});
+    if (usuarioRol)
+      await this.usuarioRepository.usuarioRoles(Usuario.id).delete(rolId);
   }
   //Opciones de eliminación para el web máster
   //Eliminación por apellido
@@ -274,8 +288,9 @@ export class UsuarioController {
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<void> {
     //método
-    const currentUserRoles = await this.usuarioRepository.roles(currentUserProfile[securityId]).find();
-    const isWebMaster = currentUserRoles.some((role: {name: string;}) => role.name === 'WebMaster');
+    const userId = Number(currentUserProfile[securityId]);
+    const currentUserRoles = await this.usuarioRepository.roles(userId).find();
+    const isWebMaster = currentUserRoles.some((roles: {nombre: string;}) => roles.nombre === 'WebMaster');
 
     if (!isWebMaster) {
       throw new HttpErrors.Forbidden('Solo el Web Máster puede eliminar usuarios.');
@@ -300,8 +315,9 @@ export class UsuarioController {
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<void> {
     // método
-    const currentUserRoles = await this.usuarioRepository.roles(currentUserProfile[securityId]).find();
-    const isWebMaster = currentUserRoles.some((role: {correo: string;}) => role.correo === 'WebMaster');
+    const userId = Number(currentUserProfile[securityId]);
+    const currentUserRoles = await this.usuarioRepository.roles(userId).find();
+    const isWebMaster = currentUserRoles.some((roles: Rol) => roles.nombre === 'WebMaster');
     if (!isWebMaster) {
       throw new HttpErrors.Forbidden('Solo el Web Máster puede eliminar usuarios.');
     }
@@ -311,4 +327,5 @@ export class UsuarioController {
     }
     await this.usuarioRepository.deleteById(usuario.id);
   }
+
 }

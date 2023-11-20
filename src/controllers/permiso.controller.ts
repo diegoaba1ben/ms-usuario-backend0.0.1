@@ -1,29 +1,14 @@
 import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
-  repository,
-  Where,
+  Count, CountSchema, Filter, FilterExcludingWhere, repository, Where,
 } from '@loopback/repository';
 import {
-  del,
-  get,
-  getModelSchemaRef,
-  HttpErrors,
-  param,
-  patch,
-  post,
-  put,
-  requestBody,
+  del, get, getModelSchemaRef, HttpErrors, param, patch, post, put, requestBody,
   response,
 } from '@loopback/rest';
-import {Permiso} from '../models';
+import {Permiso, Rol} from '../models';
+import {UsuarioRol} from '../models/usuario-rol.model';
 import {
-  PermisoRepository,
-  RolPermisoRepository,
-  RolRepository,
-  UsuarioRepository
+  PermisoRepository, RolPermisoRepository, RolRepository, UsuarioRepository, UsuarioRolRepository
 } from '../repositories';
 
 export class PermisoController {
@@ -37,6 +22,8 @@ export class PermisoController {
     public rolRepository: RolRepository, //Inyección de RolRepository
     @repository(RolPermisoRepository)
     public rolPermisoRepository: RolPermisoRepository,//Inyección de RolPermisoRepository
+    @repository(UsuarioRolRepository)
+    public usuarioRolRepository: UsuarioRolRepository,
   ) { }
 
   @post('/permisos')
@@ -137,16 +124,32 @@ export class PermisoController {
       },
     },
   })
+  async findRolesByUserId(
+    @param.path.number('id') id: number,
+  ): Promise<Rol[]> {
+    // Obtén todas las instancias de UsuarioRol para el usuario dado
+    const usuarioRoles = await this.usuarioRepository.usuarioRoles(id).find();
+
+    // Para cada UsuarioRol, obtén el Rol correspondiente
+    const roles = await Promise.all(usuarioRoles.map(async (usuarioRol: UsuarioRol) => {
+      return this.rolRepository.findById(usuarioRol.rolId);
+    }));
+
+    return roles;
+  }
+
   async findPermisosByUserId(
     @param.path.number('id') id: number,
   ): Promise<Permiso[]> {
-    // Primero, se obtiene el usuario por su Id
-    const usuario = await this.usuarioRepository.findById(id);
-    // Se usa el id del usuario para obtener los roles
-    const roles = await this.rolRepository.find({
-      where: {usuarioId: usuario.id},
-    });
-    // para cada  rol obtenido, se encuentran los permisos asociados
+    // Obtiene todas las instancias de UsuarioRol para el usuario dado
+    const usuarioRoles = await this.usuarioRepository.usuarioRoles(id).find();
+
+    // Para cada UsuarioRol, obtiene el Rol correspondiente
+    const roles = await Promise.all(usuarioRoles.map(async (usuarioRol: UsuarioRol) => {
+      return this.rolRepository.findById(usuarioRol.rolId);
+    }));
+
+    // Para cada rol obtenido, se encuentran los permisos asociados
     const permisos: Permiso[] = [];
     for (const rol of roles) {
       const rolPermisos = await this.rolPermisoRepository.find({
@@ -157,6 +160,7 @@ export class PermisoController {
         permisos.push(permiso);
       }
     }
+
     return permisos;
   }
   //Búsqueda por apellido
@@ -180,21 +184,25 @@ export class PermisoController {
     if (!usuario) {
       throw new HttpErrors.NotFound(`Usuario con apellido ${apellido} no encontrado`);
     }
-    // Se usa el id del usuario para obtener los roles
-    const roles = await this.rolRepository.find({
-      where: {usuarioId: usuario.id},
-    });
-    // para cada rol obtenido, se encuentran los permisos asociados
+
+    // Se usa el id del usuario para obtener las instancias de UsuarioRol
+    const usuarioRoles = await this.usuarioRepository.usuarioRoles(usuario.id).find();
+
+    // Para cada UsuarioRol, obtén el Rol correspondiente
+    const roles = await Promise.all(usuarioRoles.map(async (usuarioRol: UsuarioRol) => {
+      return this.rolRepository.findById(usuarioRol.rolId);
+    }));
+
+    // Para cada rol obtenido, se encuentran los permisos asociados
     const permisos: Permiso[] = [];
     for (const rol of roles) {
-      const rolPermisos = await this.rolPermisoRepository.find({
-        where: {rolId: rol.id},
-      });
+      const rolPermisos = await this.rolRepository.permisos(rol.id).find();
       for (const rolPermiso of rolPermisos) {
-        const permiso = await this.permisoRepository.findById(rolPermiso.permisoId);
-        permisos.push(permiso);
+        const permiso = await this.rolRepository.permisos(rol.id).find();
+        permisos.push(...permiso);
       }
     }
+
     return permisos;
   }
 
@@ -219,10 +227,19 @@ export class PermisoController {
     if (!usuario) {
       throw new HttpErrors.NotFound(`Usuario con correo ${correo} no encontrado`);
     }
-    // Se usa el id del usuario para obtener los roles
-    const roles = await this.rolRepository.find({
+
+    // Se usa el id del usuario para obtener las instancias de UsuarioRol
+    const usuarioRoles = await this.usuarioRolRepository.find({
       where: {usuarioId: usuario.id},
     });
+
+    // para cada UsuarioRol obtenido, se encuentra el rol asociado
+    const roles: Rol[] = [];
+    for (const usuarioRol of usuarioRoles) {
+      const rol = await this.rolRepository.findById(usuarioRol.rolId);
+      roles.push(rol);
+    }
+
     // para cada rol obtenido, se encuentran los permisos asociados
     const permisos: Permiso[] = [];
     for (const rol of roles) {
@@ -234,8 +251,10 @@ export class PermisoController {
         permisos.push(permiso);
       }
     }
+
     return permisos;
   }
+
 
 
   @patch('/permisos/{id}')

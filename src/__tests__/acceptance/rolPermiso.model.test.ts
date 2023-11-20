@@ -2,6 +2,7 @@ import {expect} from '@loopback/testlab';
 import {MongoMemoryServer} from 'mongodb-memory-server';
 import {MongoDbDataSource} from '../../datasources/mongo-db.datasource';
 import {Usuario} from '../../models';
+import {RolRepository} from '../../repositories';
 import {UsuarioRepository} from '../../repositories/usuario.repository';
 
 //configuración del servidor de MongoDB en memoria
