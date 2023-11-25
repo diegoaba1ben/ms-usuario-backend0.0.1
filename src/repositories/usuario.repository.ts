@@ -110,6 +110,10 @@ export class UsuarioRepository extends DefaultCrudRepository<
     return isPasswordValid;
   }
   /*Actualización de datos de usuario*/
+  //Obtener a un usuario por correo
+  public async obtenerPorCorreo(correo: string): Promise<Usuario | null> {
+    return this.findOne({where: {correo}});
+  }
   //Búsqueda por correo
   async actualizarPorCorreo(correo: string, camposActualizados: Partial<Usuario>) {
     // Búsqueda del usuario en la base de datos por correo electrónico
@@ -127,6 +131,9 @@ export class UsuarioRepository extends DefaultCrudRepository<
     await this.save(usuario);
 
     return usuario;
+  }
+  async obtenerTodos() {
+    return this.find();
   }
 
 }

@@ -73,6 +73,14 @@ export class Usuario extends Entity {
       keyTo: 'rolId'
     }
   })
+
+  @property({
+    type: 'boolean',
+    default: true,
+  })
+  estado: boolean;
+
+
   public roles: HasManyRepositoryFactory<Rol, typeof Usuario.prototype.id>
 
 

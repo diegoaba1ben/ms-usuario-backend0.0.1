@@ -64,25 +64,6 @@ export class UsuarioController {
     return this.usuarioRepository.count(where);
   }
 
-  @get('/usuarios')
-  @response(200, {
-    description: 'Array of Usuario model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Usuario, {includeRelations: true}),
-        },
-      },
-    },
-  })
-  //Diego Benjumea
-  async find(
-    @param.filter(Usuario) filter?: Filter<Usuario>,
-  ): Promise<Usuario[]> {
-    return this.usuarioRepository.find(filter);
-  }
-
   @patch('/usuarios')
   @response(200, {
     description: 'Usuario PATCH success count',
@@ -119,6 +100,7 @@ export class UsuarioController {
   }
 
   //Búsqueda por nombre
+  //Diego Benjumea
   @get('/usuarios/nombre/{nombre}')
   @response(200, {
     description: 'usuario model instance',
@@ -157,7 +139,7 @@ export class UsuarioController {
     }
     return usuario;
   }
-  //Creación array para que usuario acceda a yodos los roles
+  //Creación array para que usuario acceda a todos los roles
   @get('/usuariois/apellido/{apellido}/roles')
   async obteneerRolesPorApellido(
     @param.path.string('apellido') apellido: string,
@@ -169,7 +151,7 @@ export class UsuarioController {
     return this.usuarioRepository.roles(usuario.id).find();
   }
 
-  //Filtro avanzado
+  //Filtro avanzado para llamar todos los usuarios
   @get('/usuarios')
   @response(200, {
     description: 'Instancia de búsqueda avanzada',
@@ -182,6 +164,32 @@ export class UsuarioController {
       },
     },
   })
+
+  async obtenerTodos(
+    @param.filter(Usuario) filter?: Filter<Usuario>,
+  ): Promise<Usuario[]> {
+    return this.usuarioRepository.find(filter);
+  }
+
+  //Filtrar por estado
+  @get('usuarios/estado/{estado}')
+  @response(200, {
+    description: 'Consulta por estado de usuario',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Usuario, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findByEstado(
+    @param.path.boolean('estado') estado: boolean,
+  ): Promise<Usuario[]> {
+    return this.usuarioRepository.find({where: {estado}});
+  }
+
   Advanced(
     @param.filter(Usuario) filter?: Filter<Usuario>,
   ): Promise<Usuario[]> {
