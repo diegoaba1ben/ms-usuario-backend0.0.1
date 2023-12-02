@@ -1,6 +1,5 @@
 import {Entity, model, property} from '@loopback/repository';
 
-
 @model({
   settings: {
     indexes: {

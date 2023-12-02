@@ -66,6 +66,12 @@ export class Usuario extends Entity {
   })
   password: string;
 
+  @property({
+    type: 'boolean',
+    default: true,
+  })
+  estado: boolean;
+
   @hasMany(() => Rol, {
     through: {
       model: () => UsuarioRol,
@@ -74,11 +80,7 @@ export class Usuario extends Entity {
     }
   })
 
-  @property({
-    type: 'boolean',
-    default: true,
-  })
-  estado: boolean;
+
 
 
   public roles: HasManyRepositoryFactory<Rol, typeof Usuario.prototype.id>

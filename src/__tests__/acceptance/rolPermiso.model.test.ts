@@ -3,7 +3,7 @@ import {MongoMemoryServer} from 'mongodb-memory-server';
 import {MongoDbDataSource} from '../../datasources/mongo-db.datasource';
 import {Usuario} from '../../models';
 import {RolRepository} from '../../repositories';
-import {UsuarioRepository} from '../../repositories/usuario.repository';
+import {UsuarioRepository} from '../../repositories/usuario.repository2';
 
 //configuración del servidor de MongoDB en memoria
 let usuarioRepository: UsuarioRepository; // vamos a crear una instancia.

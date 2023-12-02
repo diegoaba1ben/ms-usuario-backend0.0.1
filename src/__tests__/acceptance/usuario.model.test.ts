@@ -3,7 +3,7 @@ import {HttpErrors} from '@loopback/rest';
 import {expect} from '@loopback/testlab';
 import {Usuario} from '../../models';
 import {UsuarioRepository} from '../../repositories';
-import {setupUsuarioRepository} from '../../repositories/usuario.repository';
+import {setupUsuarioRepository} from '../../repositories/usuario.repository2';
 
 // Bloque de prueba Mocha Chai.
 describe('UsuarioRepository', () => {
@@ -219,6 +219,44 @@ describe('UsuarioRepository', () => {
         // Debería haber un error
         expect(error).to.be.ok;
       }
+    });
+    /*Bloque de eliminación de usuario existente */
+    describe('UsuarioRepository', () => {
+      let usuarioRepository: UsuarioRepository;
+
+      beforeEach(() => {
+        // inicializa tu repositorio aquí...
+      });
+
+      it('debería crear, eliminar y verificar la eliminación de un usuario', async () => {
+        try {
+          // Crea un usuario de prueba
+          const usuarioCreado = await usuarioRepository.create({
+            nombre: 'Nombre',
+            apellido: 'Apellido',
+            correo: 'correo@dominio.com',
+            password: 'Contraseña123!',
+            // otros campos necesarios...
+          });
+
+          // Verifica que el usuario fue creado correctamente
+          expect(usuarioCreado).to.have.property('id');
+          expect(usuarioCreado.nombre).to.equal('Nombre');
+          // otras verificaciones...
+
+          // Elimina el usuario
+          await usuarioRepository.eliminarPorCorreo('correo@dominio.com');
+
+          // Verifica que el usuario fue eliminado correctamente
+          const usuarioEliminado = await usuarioRepository.obtenerPorCorreo('correo@dominio.com');
+          expect(usuarioEliminado).to.be.null();
+        } catch (error) {
+          console.error(error);
+          // maneja el error aquí...
+        }
+      });
+      //Bloque de recuperación de un usuario
+
     });
     /*Bloque para las consultas */
     //Obtención de todos los usuarios
